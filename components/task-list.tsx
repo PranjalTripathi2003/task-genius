@@ -39,10 +39,13 @@ export function TaskList() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editDescription, setEditDescription] = useState("")
+  const [openCategories, setOpenCategories] = useState<string[]>([])
   const { toast } = useToast()
 
-  const fetchTasks = async () => {
-    setLoading(true)
+  const fetchTasks = async (showLoading = false) => {
+    if (showLoading) {
+      setLoading(true)
+    }
     try {
       const response = await fetch("/api/tasks")
       if (response.ok) {
@@ -52,13 +55,15 @@ export function TaskList() {
     } catch (error) {
       console.error("Failed to fetch tasks:", error)
     } finally {
-      setLoading(false)
+      if (showLoading) {
+        setLoading(false)
+      }
     }
   }
 
   useEffect(() => {
-    fetchTasks()
-    const handleTasksUpdated = () => fetchTasks()
+    fetchTasks(true)
+    const handleTasksUpdated = () => fetchTasks(false)
     window.addEventListener("tasksUpdated", handleTasksUpdated)
     return () => window.removeEventListener("tasksUpdated", handleTasksUpdated)
   }, [])
@@ -92,6 +97,12 @@ export function TaskList() {
     window.dispatchEvent(new CustomEvent("tasksUpdated"))
   }
 
+  const handleOpenChange = (category: string, isOpen: boolean) => {
+    setOpenCategories((prev) =>
+      isOpen ? [...prev, category] : prev.filter((c) => c !== category),
+    )
+  }
+
   const toggleTaskCompletion = async (taskId: string, completed: boolean) => {
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
@@ -103,7 +114,6 @@ export function TaskList() {
         setTasks(tasks.map((task) => (task.id === taskId ? { ...task, completed } : task)))
         toast({
           title: completed ? "Task Completed!" : "Task Reopened",
-          description: completed ? "Great job!" : "Task marked as pending.",
         })
         dispatchTasksUpdate()
       }
@@ -200,7 +210,12 @@ export function TaskList() {
               </div>
             ) : (
               Object.entries(groupedTasks).map(([category, tasksInCategory]) => (
-                <Collapsible key={category} className="space-y-2" defaultOpen>
+                <Collapsible
+                  key={category}
+                  className="space-y-2"
+                  open={openCategories.includes(category)}
+                  onOpenChange={(isOpen) => handleOpenChange(category, isOpen)}
+                >
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 group">
                       <div className="flex items-center space-x-2">
