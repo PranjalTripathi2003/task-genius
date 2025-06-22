@@ -1,4 +1,4 @@
-# TaskGenius MVP - AI-Powered Task Management
+# TaskGenius - AI-Powered Task Management
 
 A full-stack web application that leverages Google Gemini AI to generate and manage tasks with complete CRUD operations, user authentication, and progress visualization.
 
